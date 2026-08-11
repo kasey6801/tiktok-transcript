@@ -1,0 +1,44 @@
+/* Options page. Loaded after popup.css so it inherits the palette and controls,
+   and overrides only the sizing, which popup.css fixes at popup dimensions. */
+
+body.options-page {
+  width: auto;
+  min-height: 100vh;
+}
+
+body.options-page main {
+  max-width: 640px;
+  max-height: none;
+  overflow-y: visible;
+  margin: 0 auto;
+  padding: 2rem 1.5rem 3rem;
+}
+
+body.options-page .settings {
+  border-top: 1.5px solid var(--line);
+  padding-top: 1.1rem;
+  margin-top: 1.6rem;
+}
+
+body.options-page .settings .muted { margin: .35rem 0 .8rem; }
+
+.mono-path {
+  font-family: var(--mono);
+  font-size: .82rem;
+  word-break: break-all;
+}
+
+.folder-line {
+  display: flex;
+  align-items: baseline;
+  gap: .5rem;
+  flex-wrap: wrap;
+  margin: .2rem 0 .4rem;
+}
+
+.settings-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .5rem;
+  margin-top: .8rem;
+}

@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>TikTok Transcript settings</title>
+<script src="theme-init.js"></script>
+<link rel="stylesheet" href="popup.css">
+<link rel="stylesheet" href="options.css">
+</head>
+<body class="options-page">
+<button id="theme-toggle" aria-label="Toggle dark mode">🌙 Dark</button>
+<main>
+  <header>
+    <p class="eyebrow">Settings · Runs in this browser only</p>
+    <h1>TikTok Transcript</h1>
+    <p class="subtitle">Where transcripts are saved, and what gets written</p>
+  </header>
+
+  <section class="settings">
+    <h2 class="section-label">Transcript folder</h2>
+    <p class="muted">
+      Transcripts always stay in this browser. Choose a folder as well and every
+      transcript is written there too, so the history survives removing the extension.
+    </p>
+    <p class="folder-line">
+      <span class="muted">Current folder:</span>
+      <span id="folder-name" class="mono-path">not set</span>
+    </p>
+    <p id="folder-state" class="muted"></p>
+    <div class="settings-actions">
+      <button id="choose-folder-btn">Choose folder...</button>
+      <button id="regrant-btn" class="hidden">Reconnect folder</button>
+      <button id="write-all-btn" class="hidden">Write existing history to this folder</button>
+      <button id="forget-folder-btn" class="linkish hidden">Stop using a folder</button>
+    </div>
+    <p id="folder-status" class="muted hidden"></p>
+  </section>
+
+  <section class="settings">
+    <h2 class="section-label">File formats</h2>
+    <p class="muted">Which files to write for each transcript.</p>
+    <label class="toggle settings-row"><input id="fmt-json" type="checkbox"> JSON (full record, re-importable)</label>
+    <label class="toggle settings-row"><input id="fmt-md" type="checkbox"> Markdown (.md, with source link)</label>
+    <label class="toggle settings-row"><input id="fmt-srt" type="checkbox"> Subtitles (.srt)</label>
+  </section>
+
+  <section class="settings">
+    <h2 class="section-label">Diagnostics</h2>
+    <p class="muted">
+      A rolling log of the last 500 events. Export it if a transcription fails and
+      you want to know why.
+    </p>
+    <div class="settings-actions">
+      <button id="export-log-btn">Export log</button>
+      <button id="clear-log-btn" class="linkish">Clear log</button>
+    </div>
+    <p id="log-status" class="muted"></p>
+  </section>
+</main>
+<script type="module" src="options.js"></script>
+</body>
+</html>

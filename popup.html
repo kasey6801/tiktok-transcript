@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>TikTok Transcript</title>
+<script src="theme-init.js"></script>
+<link rel="stylesheet" href="popup.css">
+</head>
+<body>
+<button id="theme-toggle" aria-label="Toggle dark mode">🌙 Dark</button>
+<main>
+  <header>
+    <p class="eyebrow">Local tool · Runs in this browser only</p>
+    <h1>TikTok Transcript</h1>
+    <p class="subtitle">Paste a TikTok video link to generate a transcript</p>
+  </header>
+
+  <section class="input-row">
+    <input id="url-input" type="url" placeholder="Paste a TikTok video URL" autocomplete="off" spellcheck="false">
+  </section>
+  <section class="input-row">
+    <button id="go-btn">Get transcript</button>
+    <button id="tab-btn">Use current tab</button>
+    <button id="clear-btn" aria-label="Clear the input and result">Clear</button>
+  </section>
+
+  <section id="status" class="status hidden"></section>
+
+  <section id="result" class="result card hidden">
+    <div class="result-head">
+      <div id="result-meta" class="result-meta"></div>
+      <div class="result-controls">
+        <label class="toggle"><input id="ts-toggle" type="checkbox"> Timestamps</label>
+        <button id="copy-btn">Copy</button>
+      </div>
+    </div>
+    <div id="transcript" class="transcript"></div>
+    <div class="downloads">
+      <span class="downloads-label">Download</span>
+      <button id="dl-txt" class="dl">.txt</button>
+      <button id="dl-md" class="dl dl-md">.md</button>
+      <button id="dl-srt" class="dl">.srt</button>
+    </div>
+  </section>
+
+  <section class="history">
+    <div class="history-head">
+      <h2 class="section-label">Recent transcripts</h2>
+      <button id="clear-history-btn" aria-label="Clear all recent transcripts">Clear list</button>
+    </div>
+    <ul id="history-list"></ul>
+    <p id="history-empty" class="muted">Nothing here yet. Transcripts save automatically in this browser.</p>
+    <button id="restore-btn" class="linkish hidden">Restore cleared</button>
+  </section>
+
+  <section class="settings">
+    <h2 class="section-label">Settings</h2>
+    <div class="settings-row">
+      <label class="toggle" for="model-select">Whisper model</label>
+      <select id="model-select">
+        <option value="onnx-community/whisper-tiny">tiny (fastest, 41 MB)</option>
+        <option value="onnx-community/whisper-base">base (77 MB)</option>
+        <option value="onnx-community/whisper-small" selected>small (default, 249 MB)</option>
+        <option value="onnx-community/whisper-large-v3-turbo">large-v3-turbo (most accurate, 1.1-1.6 GB)</option>
+      </select>
+    </div>
+    <label class="toggle settings-row"><input id="ask-where" type="checkbox"> Ask where to save each download</label>
+    <p id="device-note" class="muted"></p>
+    <p id="folder-note" class="muted hidden"></p>
+    <button id="open-options-btn" class="linkish">Transcript folder and diagnostics...</button>
+  </section>
+</main>
+<script type="module" src="popup.js"></script>
+</body>
+</html>

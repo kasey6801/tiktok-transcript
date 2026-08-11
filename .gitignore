@@ -1,0 +1,7 @@
+# Unlike the parent project's ignore file, this one tracks itself, so a clone
+# actually carries these rules.
+
+.DS_Store
+Thumbs.db
+desktop.ini
+*.zip
