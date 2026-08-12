@@ -34,6 +34,19 @@
       <button id="forget-folder-btn" class="linkish hidden">Stop using a folder</button>
     </div>
     <p id="folder-status" class="muted hidden"></p>
+
+    <label class="toggle settings-row downloads-opt">
+      <input id="save-downloads" type="checkbox">
+      Also save every transcript to Downloads/TikTok Transcripts
+    </label>
+    <p class="muted">
+      Chrome does not let extensions open a folder picker reliably, so this is the
+      option that always works. It cannot target an arbitrary folder, only a
+      subfolder of Downloads.
+    </p>
+    <div class="settings-actions">
+      <button id="write-all-downloads-btn">Write existing history to Downloads</button>
+    </div>
   </section>
 
   <section class="settings">
@@ -51,10 +64,13 @@
       you want to know why.
     </p>
     <div class="settings-actions">
-      <button id="export-log-btn">Export log</button>
+      <button id="view-log-btn">View log</button>
+      <button id="copy-log-btn">Copy</button>
+      <button id="export-log-btn">Download as .txt</button>
       <button id="clear-log-btn" class="linkish">Clear log</button>
     </div>
     <p id="log-status" class="muted"></p>
+    <pre id="log-view" class="log-view hidden" tabindex="0"></pre>
   </section>
 </main>
 <script type="module" src="options.js"></script>

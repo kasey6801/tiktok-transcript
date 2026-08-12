@@ -15,6 +15,9 @@ const regrantBtn = document.getElementById("regrant-btn");
 const writeAllBtn = document.getElementById("write-all-btn");
 const forgetBtn = document.getElementById("forget-folder-btn");
 const logStatus = document.getElementById("log-status");
+const logView = document.getElementById("log-view");
+const saveDownloads = document.getElementById("save-downloads");
+const writeAllDownloadsBtn = document.getElementById("write-all-downloads-btn");
 const themeToggle = document.getElementById("theme-toggle");
 
 const FORMAT_BOXES = {
@@ -27,10 +30,31 @@ chooseBtn.addEventListener("click", chooseFolder);
 regrantBtn.addEventListener("click", regrant);
 writeAllBtn.addEventListener("click", writeAll);
 forgetBtn.addEventListener("click", forgetFolder);
+document.getElementById("view-log-btn").addEventListener("click", viewLog);
+document.getElementById("copy-log-btn").addEventListener("click", copyLog);
 document.getElementById("export-log-btn").addEventListener("click", exportLog);
 document.getElementById("clear-log-btn").addEventListener("click", async () => {
   await clearLog();
+  logView.textContent = "";
+  logView.classList.add("hidden");
   logStatus.textContent = "Log cleared.";
+});
+saveDownloads.addEventListener("change", async () => {
+  await store.setSettings({ saveToDownloads: saveDownloads.checked });
+  show(folderStatus, saveDownloads.checked
+    ? "New transcripts will also be saved to Downloads/TikTok Transcripts."
+    : "Stopped saving to Downloads.");
+});
+writeAllDownloadsBtn.addEventListener("click", async () => {
+  writeAllDownloadsBtn.disabled = true;
+  show(folderStatus, "Writing to Downloads...");
+  try {
+    const count = await store.writeAllToDownloads();
+    show(folderStatus, `Wrote ${count} transcript${count === 1 ? "" : "s"} to Downloads/TikTok Transcripts.`);
+  } catch (err) {
+    show(folderStatus, `Could not write everything: ${err?.message ?? err}`);
+  }
+  writeAllDownloadsBtn.disabled = false;
 });
 themeToggle.addEventListener("click", toggleTheme);
 for (const [key, box] of Object.entries(FORMAT_BOXES)) {
@@ -45,6 +69,7 @@ async function init() {
   for (const [key, box] of Object.entries(FORMAT_BOXES)) {
     box.checked = settings.folderFormats[key] !== false;
   }
+  saveDownloads.checked = settings.saveToDownloads === true;
   await refreshFolder();
 }
 
@@ -67,11 +92,31 @@ async function refreshFolder() {
 }
 
 async function chooseFolder() {
+  if (typeof window.showDirectoryPicker !== "function") {
+    show(folderStatus, "This Chrome build does not offer a folder picker. Use \"Also save to Downloads\" below instead.");
+    log("folder", "showDirectoryPicker is not available in this context");
+    return;
+  }
+
   let handle;
+  const startedAt = Date.now();
   try {
     handle = await window.showDirectoryPicker({ mode: "readwrite", id: "tiktok-transcripts" });
   } catch (err) {
-    return; // The user cancelled the picker.
+    // A real cancellation and the known extension failure both surface as
+    // AbortError, but the failure returns instantly because no dialog is ever
+    // drawn. Anything under a second was not a human deciding.
+    const instant = Date.now() - startedAt < 1000;
+    if (err?.name === "AbortError" && !instant) {
+      log("folder", "folder picker cancelled by the user");
+      return;
+    }
+    const detail = err?.name === "AbortError"
+      ? "Chrome refused to open the folder picker. This is a known Chrome limitation for extensions (the picker never appears). Use \"Also save to Downloads\" below, which does not depend on it."
+      : `Could not open the folder picker: ${err?.name ?? "error"} ${err?.message ?? ""}`.trim();
+    show(folderStatus, detail);
+    log("folder", `folder picker failed: ${err?.name}: ${err?.message}`);
+    return;
   }
   await fsstore.setHandle(handle);
   log("folder", `folder set to "${handle.name}"`);
@@ -120,6 +165,25 @@ async function persistFormats(changedKey) {
     show(folderStatus, "At least one format has to stay selected.");
   }
   await store.setSettings({ folderFormats });
+}
+
+// Read the log here rather than making a round trip through a downloaded file.
+async function viewLog() {
+  const entries = await readLog();
+  logView.textContent = formatLog(entries);
+  logView.classList.remove("hidden");
+  logStatus.textContent = `Showing ${entries.length} entries, newest last.`;
+  logView.scrollTop = logView.scrollHeight;
+}
+
+async function copyLog() {
+  const entries = await readLog();
+  try {
+    await navigator.clipboard.writeText(formatLog(entries));
+    logStatus.textContent = `Copied ${entries.length} entries.`;
+  } catch (err) {
+    logStatus.textContent = "Could not copy. Use View log and select the text.";
+  }
 }
 
 async function exportLog() {

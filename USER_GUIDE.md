@@ -59,13 +59,13 @@ In the popup:
 - The note at the bottom tells you whether Whisper runs via WebGPU (faster) or WebAssembly on this machine.
 - **Transcript folder and diagnostics...** opens the settings page described next.
 
-## 6a. Transcript folder
+## 6a. Saving transcripts to disk
 
-Transcripts always live in this browser. Choosing a folder as well means every new transcript is also written to disk, so your history survives removing the extension.
+Transcripts always live in this browser. Saving to disk as well means your history survives removing the extension.
 
-1. Open the popup, click **Transcript folder and diagnostics...**
-2. Click **Choose folder...** and pick a directory. Chrome asks once for permission to edit files in it.
-3. Optionally click **Write existing history to this folder** to export everything you already have.
+**Use "Also save to Downloads".** Open the popup, click **Transcript folder and diagnostics...**, and tick **Also save every transcript to Downloads/TikTok Transcripts**. Use **Write existing history to Downloads** to export what you already have.
+
+**About "Choose folder...".** Picking an arbitrary folder does not currently work in Chrome extensions. `showDirectoryPicker()` fails without showing a dialog, which is a known unresolved Chrome limitation ([WICG/file-system-access#314](https://github.com/WICG/file-system-access/issues/314)), not a fault in this extension. The button is kept because it will start working if Chrome fixes it, and it now reports what happened instead of failing silently. Until then, Downloads is the path that works; its only limitation is that it writes to a subfolder of Downloads rather than anywhere you choose.
 
 Each transcript writes one file per selected format, named `tiktok_<creator>_<id>`:
 
@@ -81,7 +81,14 @@ All three are on by default; at least one must stay selected.
 
 ## 6b. Diagnostics
 
-The settings page keeps a rolling log of the last 500 events: jobs accepted, each state change, which media streams were tried and whether they contained audio, folder writes, and model loading. **Export log** saves it as a text file. Send or read that if a transcription fails and the on-screen message does not explain why.
+The settings page keeps a rolling log of the last 500 events: jobs accepted, each state change, which media streams were tried and whether they contained audio, folder and download writes, and model loading.
+
+- **View log** shows it inline, newest last, without leaving the page.
+- **Copy** puts it on the clipboard.
+- **Download as .txt** saves it to a file.
+- **Clear log** empties it.
+
+Reach for View log first if a transcription fails and the on-screen message does not explain why.
 
 ## 7. Messages you may see
 

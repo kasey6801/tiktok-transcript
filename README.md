@@ -25,15 +25,23 @@ Chrome 124 or newer.
 Open a TikTok video, click the extension icon, then **Use current tab**. Or paste any
 `tiktok.com`, `vm.tiktok.com` or `vt.tiktok.com` link into the box.
 
+**Use current tab** also works from the feed. On `/following` or `/foryou` the address bar
+keeps the feed URL rather than the URL of whatever is playing, so the extension asks the
+page which video is on screen instead of trusting the address bar. The resolved link
+appears in the box before transcription starts, so you can see which video was picked. If
+two videos are ambiguous it declines rather than guessing, since silently transcribing the
+wrong one would be worse.
+
 Transcripts are saved automatically, listed in the popup, and exportable as `.txt`, `.md`
 or `.srt`. The job runs in an offscreen document, so it keeps going after you close the
 popup.
 
-## Saving to a folder
+## Saving to disk
 
 By default transcripts live in the browser, which means removing the extension removes
-them. Open **Transcript folder and diagnostics...** in the popup to pick a folder as well;
-every new transcript is then written to disk too.
+them. Open **Transcript folder and diagnostics...** in the popup and tick **Also save
+every transcript to Downloads/TikTok Transcripts** to keep copies on disk. There is a
+button to write your existing history out too.
 
 Each transcript writes one file per selected format, named `tiktok_<creator>_<id>`:
 
@@ -43,9 +51,14 @@ Each transcript writes one file per selected format, named `tiktok_<creator>_<id
 | `.md` | Readable transcript with a labeled source link |
 | `.srt` | Subtitles with timecodes |
 
-Chrome can withdraw folder access after a restart. If that happens the popup says so and
-transcripts keep saving to browser storage, so nothing is lost; reconnect the folder from
-the settings page to resume writing files.
+**On choosing an arbitrary folder.** The settings page has a **Choose folder...** button,
+but picking a folder does not currently work in Chrome extensions: `showDirectoryPicker()`
+throws without ever showing a dialog. That is a known unresolved Chrome limitation
+([WICG/file-system-access#314](https://github.com/WICG/file-system-access/issues/314),
+[crbug 40240444](https://issues.chromium.org/issues/40240444)), not a fault in this
+extension. The button is kept so it starts working if Chrome fixes it, and it now reports
+what happened rather than failing silently. Until then Downloads is the path that works;
+its only limitation is the fixed location.
 
 ## Whisper models
 
@@ -77,9 +90,10 @@ path. On WebAssembly, turbo is not practical.
 ## Diagnostics
 
 The settings page keeps a rolling log of the last 500 events: jobs accepted, state
-changes, which media streams were tried and whether they contained audio, folder writes
-and model loading. Export it if a transcription fails and the on-screen message does not
-explain why.
+changes, which media streams were tried and whether they contained audio, disk writes,
+and model loading. **View log** shows it inline without leaving the page; **Copy** and
+**Download as .txt** are there too. Reach for it when a transcription fails and the
+on-screen message does not explain why.
 
 ## Why the `.wasm` file is committed
 

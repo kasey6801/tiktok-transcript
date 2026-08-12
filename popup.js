@@ -4,6 +4,13 @@
 
 import { MSG, STATE, TERMINAL_STATES } from "./lib/messages.js";
 import { toTxt, toMd, toSrt, safeName } from "./lib/formats.js";
+import {
+  isTikTokUrl,
+  classifyTikTokUrl,
+  pageKindLabel,
+  activeVideoUrlFromTab,
+} from "./lib/tiktok.js";
+import { log } from "./lib/log.js";
 
 const urlInput = document.getElementById("url-input");
 const goBtn = document.getElementById("go-btn");
@@ -92,12 +99,36 @@ async function submit(url, activeTab) {
 
 async function useCurrentTab() {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-  if (!tab?.url || !tab.url.includes("tiktok.com")) {
+  if (!tab?.url || !isTikTokUrl(tab.url)) {
     showStatus("The current tab is not a TikTok page.", "error");
     return;
   }
-  urlInput.value = tab.url;
-  submit(tab.url, { id: tab.id, url: tab.url });
+
+  const kind = classifyTikTokUrl(tab.url);
+  if (kind === "video" || kind === "short") {
+    urlInput.value = tab.url;
+    submit(tab.url, { id: tab.id, url: tab.url });
+    return;
+  }
+
+  // Feed and profile pages keep their own URL in the address bar while a video
+  // plays, so the tab URL is the wrong question. Ask the page instead.
+  showStatus("Finding the video that is playing...", "working");
+  const found = await activeVideoUrlFromTab(tab.id);
+  log("tab", `page kind "${kind}" -> ${found ? `strategy "${found.strategy}", id ${found.id}` : "no video found"}`);
+
+  if (!found?.url) {
+    const detail = found?.id
+      ? "Found a video on this page but could not work out which account it belongs to. Open the video directly and try again."
+      : `This is ${pageKindLabel(kind)}. Play a video here, or open the video directly, then try again.`;
+    showStatus(detail, "error");
+    return;
+  }
+
+  // Show what was picked before submitting, so an unexpected match is visible
+  // rather than silently transcribed.
+  urlInput.value = found.url;
+  submit(found.url, null);
 }
 
 function onJobUpdate(job) {
