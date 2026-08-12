@@ -17,36 +17,39 @@
   </header>
 
   <section class="settings">
-    <h2 class="section-label">Transcript folder</h2>
+    <h2 class="section-label">Saving to disk</h2>
     <p class="muted">
-      Transcripts always stay in this browser. Choose a folder as well and every
-      transcript is written there too, so the history survives removing the extension.
+      Transcripts always stay in this browser. Save them to disk as well and the
+      history survives removing the extension.
     </p>
+
+    <label class="toggle settings-row">
+      <input id="save-downloads" type="checkbox">
+      Save every transcript to disk automatically
+    </label>
+
     <p class="folder-line">
-      <span class="muted">Current folder:</span>
-      <span id="folder-name" class="mono-path">not set</span>
+      <span class="muted">Saving to:</span>
+      <span id="save-path" class="mono-path"></span>
     </p>
-    <p id="folder-state" class="muted"></p>
+
+    <div class="settings-row">
+      <label class="toggle" for="subfolder-input">Subfolder</label>
+      <input id="subfolder-input" type="text" spellcheck="false" autocomplete="off"
+             placeholder="TikTok Transcripts">
+      <button id="subfolder-save-btn">Save</button>
+    </div>
+    <p class="muted">
+      Chrome only lets extensions write inside the browser's download folder, so the
+      part above the subfolder is whatever Chrome is set to. Change it at
+      <span class="mono-path">chrome://settings/downloads</span> to put transcripts
+      anywhere you like.
+    </p>
     <div class="settings-actions">
-      <button id="choose-folder-btn">Choose folder...</button>
-      <button id="regrant-btn" class="hidden">Reconnect folder</button>
-      <button id="write-all-btn" class="hidden">Write existing history to this folder</button>
-      <button id="forget-folder-btn" class="linkish hidden">Stop using a folder</button>
+      <button id="open-dl-settings-btn">Change Chrome's download folder</button>
+      <button id="write-all-downloads-btn">Write existing history to disk</button>
     </div>
     <p id="folder-status" class="muted hidden"></p>
-
-    <label class="toggle settings-row downloads-opt">
-      <input id="save-downloads" type="checkbox">
-      Also save every transcript to Downloads/TikTok Transcripts
-    </label>
-    <p class="muted">
-      Chrome does not let extensions open a folder picker reliably, so this is the
-      option that always works. It cannot target an arbitrary folder, only a
-      subfolder of Downloads.
-    </p>
-    <div class="settings-actions">
-      <button id="write-all-downloads-btn">Write existing history to Downloads</button>
-    </div>
   </section>
 
   <section class="settings">

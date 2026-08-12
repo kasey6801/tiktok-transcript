@@ -63,9 +63,20 @@ In the popup:
 
 Transcripts always live in this browser. Saving to disk as well means your history survives removing the extension.
 
-**Use "Also save to Downloads".** Open the popup, click **Transcript folder and diagnostics...**, and tick **Also save every transcript to Downloads/TikTok Transcripts**. Use **Write existing history to Downloads** to export what you already have.
+Open the popup, click **Transcript folder and diagnostics...**, and turn on **Save every transcript to disk automatically**. Use **Write existing history to disk** for what you already have.
 
-**About "Choose folder...".** Picking an arbitrary folder does not currently work in Chrome extensions. `showDirectoryPicker()` fails without showing a dialog, which is a known unresolved Chrome limitation ([WICG/file-system-access#314](https://github.com/WICG/file-system-access/issues/314)), not a fault in this extension. The button is kept because it will start working if Chrome fixes it, and it now reports what happened instead of failing silently. Until then, Downloads is the path that works; its only limitation is that it writes to a subfolder of Downloads rather than anywhere you choose.
+### Choosing where they go
+
+Chrome only lets an extension write inside the browser's own download directory, so the location is set in two parts:
+
+| Part | Where to change it |
+|------|--------------------|
+| The parent folder | Chrome's own setting at `chrome://settings/downloads`. The **Change Chrome's download folder** button opens it. |
+| The subfolder | The **Subfolder** box on this settings page. Defaults to `TikTok Transcripts`; nested paths such as `Work/TikTok` are fine. |
+
+Absolute paths and `..` are not accepted by Chrome, so anything of that shape is trimmed to a safe relative path when you save it. The box shows the corrected value so what you see is what will be used.
+
+There is no "choose any folder" button. `showDirectoryPicker()` is not exposed to extension pages at all, so such a control could not work ([WICG/file-system-access#314](https://github.com/WICG/file-system-access/issues/314), [crbug 40240444](https://issues.chromium.org/issues/40240444)). Versions 1.1.0 and 1.1.1 shipped one that always failed; it has been removed.
 
 Each transcript writes one file per selected format, named `tiktok_<creator>_<id>`:
 

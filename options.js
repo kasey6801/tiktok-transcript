@@ -1,19 +1,19 @@
-// Options page. Exists because showDirectoryPicker() closes the popup that
-// calls it, which loses the result; a full page in a tab survives the picker.
-// It is also the only place a user gesture is reliably available for
-// re-granting folder permission, which a service worker can never do.
+// Options page, opened in a tab rather than as a popup.
+//
+// There is deliberately no folder picker here. showDirectoryPicker() is simply
+// not exposed to extension pages, so a "choose any folder" control could never
+// work (WICG/file-system-access#314, crbug 40240444). Chrome only lets an
+// extension write inside the browser's own download directory, so location is
+// controlled by two things instead: Chrome's download folder setting for the
+// parent, and the subfolder below.
 
-import * as fsstore from "./lib/fsstore.js";
 import * as store from "./lib/store.js";
+import { normaliseSubfolder } from "./lib/dlwrite.js";
 import { readLog, clearLog, formatLog, log } from "./lib/log.js";
 
-const folderName = document.getElementById("folder-name");
-const folderState = document.getElementById("folder-state");
 const folderStatus = document.getElementById("folder-status");
-const chooseBtn = document.getElementById("choose-folder-btn");
-const regrantBtn = document.getElementById("regrant-btn");
-const writeAllBtn = document.getElementById("write-all-btn");
-const forgetBtn = document.getElementById("forget-folder-btn");
+const savePath = document.getElementById("save-path");
+const subfolderInput = document.getElementById("subfolder-input");
 const logStatus = document.getElementById("log-status");
 const logView = document.getElementById("log-view");
 const saveDownloads = document.getElementById("save-downloads");
@@ -26,10 +26,6 @@ const FORMAT_BOXES = {
   srt: document.getElementById("fmt-srt"),
 };
 
-chooseBtn.addEventListener("click", chooseFolder);
-regrantBtn.addEventListener("click", regrant);
-writeAllBtn.addEventListener("click", writeAll);
-forgetBtn.addEventListener("click", forgetFolder);
 document.getElementById("view-log-btn").addEventListener("click", viewLog);
 document.getElementById("copy-log-btn").addEventListener("click", copyLog);
 document.getElementById("export-log-btn").addEventListener("click", exportLog);
@@ -39,23 +35,30 @@ document.getElementById("clear-log-btn").addEventListener("click", async () => {
   logView.classList.add("hidden");
   logStatus.textContent = "Log cleared.";
 });
+document.getElementById("subfolder-save-btn").addEventListener("click", saveSubfolder);
+subfolderInput.addEventListener("keydown", (e) => { if (e.key === "Enter") saveSubfolder(); });
+document.getElementById("open-dl-settings-btn").addEventListener("click", openDownloadSettings);
+
 saveDownloads.addEventListener("change", async () => {
   await store.setSettings({ saveToDownloads: saveDownloads.checked });
+  await refreshSaving();
   show(folderStatus, saveDownloads.checked
-    ? "New transcripts will also be saved to Downloads/TikTok Transcripts."
-    : "Stopped saving to Downloads.");
+    ? "New transcripts will be saved to disk as well."
+    : "Stopped saving to disk. Transcripts are kept in this browser.");
 });
+
 writeAllDownloadsBtn.addEventListener("click", async () => {
   writeAllDownloadsBtn.disabled = true;
-  show(folderStatus, "Writing to Downloads...");
+  show(folderStatus, "Writing...");
   try {
     const count = await store.writeAllToDownloads();
-    show(folderStatus, `Wrote ${count} transcript${count === 1 ? "" : "s"} to Downloads/TikTok Transcripts.`);
+    show(folderStatus, `Wrote ${count} transcript${count === 1 ? "" : "s"} to disk.`);
   } catch (err) {
     show(folderStatus, `Could not write everything: ${err?.message ?? err}`);
   }
   writeAllDownloadsBtn.disabled = false;
 });
+
 themeToggle.addEventListener("click", toggleTheme);
 for (const [key, box] of Object.entries(FORMAT_BOXES)) {
   box.addEventListener("change", () => persistFormats(key));
@@ -70,89 +73,35 @@ async function init() {
     box.checked = settings.folderFormats[key] !== false;
   }
   saveDownloads.checked = settings.saveToDownloads === true;
-  await refreshFolder();
+  subfolderInput.value = settings.downloadSubfolder;
+  await refreshSaving();
 }
 
-async function refreshFolder() {
-  const handle = await fsstore.getHandle();
-  const state = await fsstore.permissionState(handle);
-
-  folderName.textContent = handle?.name ?? "not set";
-  regrantBtn.classList.toggle("hidden", state !== "prompt" && state !== "denied");
-  writeAllBtn.classList.toggle("hidden", state !== "granted");
-  forgetBtn.classList.toggle("hidden", !handle);
-
-  const explain = {
-    none: "No folder chosen. Transcripts are kept in this browser only.",
-    granted: "Connected. New transcripts are written here automatically.",
-    prompt: "Chrome needs you to confirm access again. Nothing has been lost; transcripts are still in this browser.",
-    denied: "Access was denied. Reconnect to start writing files again.",
-  };
-  folderState.textContent = explain[state] ?? "";
+async function refreshSaving() {
+  const settings = await store.getSettings();
+  const folder = normaliseSubfolder(settings.downloadSubfolder);
+  savePath.textContent = settings.saveToDownloads
+    ? `<Chrome download folder>/${folder}/`
+    : "nowhere on disk yet";
 }
 
-async function chooseFolder() {
-  if (typeof window.showDirectoryPicker !== "function") {
-    show(folderStatus, "This Chrome build does not offer a folder picker. Use \"Also save to Downloads\" below instead.");
-    log("folder", "showDirectoryPicker is not available in this context");
-    return;
-  }
-
-  let handle;
-  const startedAt = Date.now();
-  try {
-    handle = await window.showDirectoryPicker({ mode: "readwrite", id: "tiktok-transcripts" });
-  } catch (err) {
-    // A real cancellation and the known extension failure both surface as
-    // AbortError, but the failure returns instantly because no dialog is ever
-    // drawn. Anything under a second was not a human deciding.
-    const instant = Date.now() - startedAt < 1000;
-    if (err?.name === "AbortError" && !instant) {
-      log("folder", "folder picker cancelled by the user");
-      return;
-    }
-    const detail = err?.name === "AbortError"
-      ? "Chrome refused to open the folder picker. This is a known Chrome limitation for extensions (the picker never appears). Use \"Also save to Downloads\" below, which does not depend on it."
-      : `Could not open the folder picker: ${err?.name ?? "error"} ${err?.message ?? ""}`.trim();
-    show(folderStatus, detail);
-    log("folder", `folder picker failed: ${err?.name}: ${err?.message}`);
-    return;
-  }
-  await fsstore.setHandle(handle);
-  log("folder", `folder set to "${handle.name}"`);
-  await store.clearFolderWarning();
-  await refreshFolder();
-  show(folderStatus, "Folder saved. Use the button above to write your existing history into it.");
+async function saveSubfolder() {
+  // Normalise before storing so what is shown is what will actually be used;
+  // Chrome rejects absolute paths and "..", and a silent rejection at download
+  // time would be far harder to understand than a corrected value here.
+  const cleaned = normaliseSubfolder(subfolderInput.value);
+  subfolderInput.value = cleaned;
+  await store.setSettings({ downloadSubfolder: cleaned });
+  await refreshSaving();
+  log("downloads", `subfolder set to "${cleaned}"`);
+  show(folderStatus, `Saving to the "${cleaned}" subfolder.`);
 }
 
-async function regrant() {
-  const state = await fsstore.requestPermission();
-  if (state === "granted") await store.clearFolderWarning();
-  await refreshFolder();
-  show(
-    folderStatus,
-    state === "granted" ? "Reconnected." : "Chrome did not grant access to that folder."
-  );
-}
-
-async function writeAll() {
-  writeAllBtn.disabled = true;
-  show(folderStatus, "Writing...");
-  try {
-    const count = await store.writeAllToFolder();
-    show(folderStatus, `Wrote ${count} transcript${count === 1 ? "" : "s"} to the folder.`);
-  } catch (err) {
-    show(folderStatus, `Could not write everything: ${err?.message ?? err}`);
-  }
-  writeAllBtn.disabled = false;
-}
-
-async function forgetFolder() {
-  await fsstore.clearHandle();
-  await store.clearFolderWarning();
-  log("folder", "folder cleared");
-  await refreshFolder();
-  show(folderStatus, "Stopped using a folder. Transcripts stay in this browser.");
+function openDownloadSettings() {
+  // A page cannot navigate itself to chrome://settings, but the tabs API can.
+  chrome.tabs.create({ url: "chrome://settings/downloads" }).catch(() => {
+    show(folderStatus, "Open chrome://settings/downloads manually to change the download folder.");
+  });
 }
 
 async function persistFormats(changedKey) {

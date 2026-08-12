@@ -39,9 +39,9 @@ popup.
 ## Saving to disk
 
 By default transcripts live in the browser, which means removing the extension removes
-them. Open **Transcript folder and diagnostics...** in the popup and tick **Also save
-every transcript to Downloads/TikTok Transcripts** to keep copies on disk. There is a
-button to write your existing history out too.
+them. Open **Transcript folder and diagnostics...** in the popup and turn on **Save every
+transcript to disk automatically**. There is a button to write your existing history out
+too.
 
 Each transcript writes one file per selected format, named `tiktok_<creator>_<id>`:
 
@@ -51,14 +51,21 @@ Each transcript writes one file per selected format, named `tiktok_<creator>_<id
 | `.md` | Readable transcript with a labeled source link |
 | `.srt` | Subtitles with timecodes |
 
-**On choosing an arbitrary folder.** The settings page has a **Choose folder...** button,
-but picking a folder does not currently work in Chrome extensions: `showDirectoryPicker()`
-throws without ever showing a dialog. That is a known unresolved Chrome limitation
+### Choosing where they go
+
+Chrome only lets an extension write inside the browser's own download directory, so the
+location is set in two parts:
+
+- **The parent** is Chrome's download folder, at `chrome://settings/downloads`. Point that
+  wherever you like and transcripts follow.
+- **The subfolder** is set on this extension's settings page. It defaults to
+  `TikTok Transcripts` and accepts nested paths such as `Work/TikTok`.
+
+There is deliberately no "choose any folder" button. `showDirectoryPicker()` is not exposed
+to extension pages at all, so such a control could not work
 ([WICG/file-system-access#314](https://github.com/WICG/file-system-access/issues/314),
-[crbug 40240444](https://issues.chromium.org/issues/40240444)), not a fault in this
-extension. The button is kept so it starts working if Chrome fixes it, and it now reports
-what happened rather than failing silently. Until then Downloads is the path that works;
-its only limitation is the fixed location.
+[crbug 40240444](https://issues.chromium.org/issues/40240444)). Earlier versions shipped
+one; it has been removed rather than left to fail.
 
 ## Whisper models
 

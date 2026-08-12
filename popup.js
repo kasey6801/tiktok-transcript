@@ -11,6 +11,7 @@ import {
   activeVideoUrlFromTab,
 } from "./lib/tiktok.js";
 import { log } from "./lib/log.js";
+import { getSettings, setSettings } from "./lib/store.js";
 
 const urlInput = document.getElementById("url-input");
 const goBtn = document.getElementById("go-btn");
@@ -66,20 +67,17 @@ async function init() {
     if (changes.job) onJobUpdate(changes.job.newValue);
   });
   probeDevice();
-  refreshFolderNote();
+  refreshSaveNote();
 }
 
-// Chrome can revoke a stored folder handle between sessions. Say so here rather
-// than letting the user discover it later as missing files; the transcripts
-// themselves are always safe in chrome.storage regardless.
-async function refreshFolderNote() {
-  const got = await chrome.storage.local.get("folderNeedsPermission");
-  const needsPermission = got.folderNeedsPermission ?? false;
-  folderNote.classList.toggle("hidden", !needsPermission);
-  if (needsPermission) {
-    folderNote.textContent =
-      "Your transcript folder needs reconnecting. Recent transcripts were kept in this browser only.";
-  }
+// Say where transcripts are going, so "saving to disk" is not something the
+// user has to open the settings page to confirm.
+async function refreshSaveNote() {
+  const settings = await getSettings();
+  folderNote.classList.remove("hidden");
+  folderNote.textContent = settings.saveToDownloads
+    ? `Also saving to disk: ${settings.downloadSubfolder}/`
+    : "Saved in this browser only. Turn on saving to disk in settings.";
 }
 
 function send(message) {
@@ -342,8 +340,10 @@ function twoClickConfirm(button, label, action) {
 }
 
 async function loadSettings() {
-  const got = await chrome.storage.local.get("settings");
-  const settings = { model: "onnx-community/whisper-base", askWhere: false, ...(got.settings ?? {}) };
+  // Defaults come from lib/store.js rather than being restated here. Keeping a
+  // second copy meant the popup offered "base" while the background actually
+  // ran "small".
+  const settings = await getSettings();
   modelSelect.value = settings.model;
   askWhere.checked = settings.askWhere;
   modelSelect.addEventListener("change", persistSettings);
@@ -351,9 +351,10 @@ async function loadSettings() {
 }
 
 async function persistSettings() {
-  await chrome.storage.local.set({
-    settings: { model: modelSelect.value, askWhere: askWhere.checked },
-  });
+  // setSettings merges. Writing the settings object wholesale here used to wipe
+  // folderFormats, saveToDownloads and downloadSubfolder every time the model
+  // was changed.
+  await setSettings({ model: modelSelect.value, askWhere: askWhere.checked });
 }
 
 async function getSettingsFromUi() {
