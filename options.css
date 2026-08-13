@@ -45,6 +45,14 @@ body.options-page .settings .muted { margin: .35rem 0 .8rem; }
 
 .downloads-opt { margin-top: 1.1rem; }
 
+/* popup.css centres nothing, but the options page is a wide column, so the
+   version sits with the content rather than hard against the window edge. */
+body.options-page .app-version {
+  margin-top: 2rem;
+  padding-top: .9rem;
+  text-align: left;
+}
+
 .log-view {
   margin-top: .9rem;
   padding: .7rem .8rem;

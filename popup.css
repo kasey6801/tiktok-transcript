@@ -269,5 +269,15 @@ button:hover, .dl:hover { transform: translateY(-2px); box-shadow: var(--shadow-
 
 .hidden { display: none; }
 
+/* Version, so a bug report can name the build it came from. */
+.app-version {
+  margin-top: 1.4rem;
+  padding-top: .7rem;
+  border-top: 1.5px solid var(--line);
+  text-align: right;
+}
+
+.app-version .muted { font-size: .7rem; letter-spacing: .04em; }
+
 /* Two-click inline confirm state */
 button.confirming { border-color: var(--stamp-red); color: var(--stamp-red); font-weight: 700; }

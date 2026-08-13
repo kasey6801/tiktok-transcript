@@ -51,7 +51,15 @@ document.getElementById("dl-md").addEventListener("click", () => download("md"))
 document.getElementById("dl-srt").addEventListener("click", () => download("srt"));
 
 syncThemeLabel();
+showVersion();
 init();
+
+// Read from the manifest rather than a constant, so the number on screen is the
+// version that is actually installed and cannot drift from manifest.json.
+function showVersion() {
+  const { name, version } = chrome.runtime.getManifest();
+  document.getElementById("version-note").textContent = `${name} v${version}`;
+}
 
 async function init() {
   await loadSettings();

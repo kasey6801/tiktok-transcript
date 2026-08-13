@@ -65,7 +65,14 @@ for (const [key, box] of Object.entries(FORMAT_BOXES)) {
 }
 
 syncThemeLabel();
+showVersion();
 init();
+
+// From the manifest, not a constant, so it cannot drift from what is installed.
+function showVersion() {
+  const { name, version } = chrome.runtime.getManifest();
+  document.getElementById("version-note").textContent = `${name} v${version}`;
+}
 
 async function init() {
   const settings = await store.getSettings();

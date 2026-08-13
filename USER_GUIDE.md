@@ -101,6 +101,8 @@ The settings page keeps a rolling log of the last 500 events: jobs accepted, eac
 
 Reach for View log first if a transcription fails and the on-screen message does not explain why.
 
+The installed version is shown at the bottom of both the popup and this settings page. Quote it in any bug report, since behaviour differs between releases.
+
 ## 7. Messages you may see
 
 | Message | Meaning |
